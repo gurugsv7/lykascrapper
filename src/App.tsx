@@ -10,16 +10,18 @@ import { Building, Star, Database, Search } from 'lucide-react';
 
 function App() {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'villas' | 'townhouses' | 'apartments'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'villas' | 'townhouses' | 'apartments' | 'villaTownhouse'>('all');
   const [loadedAreas, setLoadedAreas] = useState<{ [key: string]: AreaData }>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('');
+  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'villas' | 'townhouses'>('all');
 
   // Filter areas based on selected category
   const filteredAreas = AREAS.filter(area => {
     if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'villaTownhouse') return area.category === 'villas' || area.category === 'townhouses';
     return area.category === selectedCategory;
   });
 
@@ -59,6 +61,11 @@ function App() {
   // Handle area selection
   const handleAreaSelect = async (areaName: string | null) => {
     setSelectedArea(areaName);
+    // Reset property type filter if area is not villa/townhouse
+    const areaObj = AREAS.find(a => a.name === areaName);
+    if (!areaObj || (areaObj.category !== 'villas' && areaObj.category !== 'townhouses')) {
+      setSelectedPropertyType('all');
+    }
     if (areaName) {
       await loadAreaData(areaName);
     }
@@ -70,30 +77,44 @@ function App() {
     : [];
 
   // Filter properties based on search term
-  const filteredProperties = currentProperties.filter(property => {
-    if (!searchTerm) return true;
-    
-    const extractBuildingName = (buildingUrl: string) => {
-      try {
-        const parts = buildingUrl.split('/');
-        const buildingPart = parts[parts.length - 2] || parts[parts.length - 1];
-        return buildingPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      } catch {
-        return '';
+  const filteredProperties = currentProperties
+    .filter(property => {
+      if (!searchTerm) return true;
+      
+      const extractBuildingName = (buildingUrl: string) => {
+        try {
+          const parts = buildingUrl.split('/');
+          const buildingPart = parts[parts.length - 2] || parts[parts.length - 1];
+          return buildingPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        } catch {
+          return '';
+        }
+      };
+      
+      const buildingName = extractBuildingName(property.building_url);
+      return buildingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             property.location.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    .filter(property => {
+      if (!selectedBedrooms) return true;
+      // Normalize both values for comparison
+      const propertyBedrooms = parseInt(property.bedroom_count).toString();
+      const selectedNormalized = parseInt(selectedBedrooms).toString();
+      return propertyBedrooms === selectedNormalized;
+    })
+    .filter(property => {
+      if (selectedPropertyType === 'all') return true;
+      // Filter by property_type field (case-insensitive)
+      const type = property.property_type?.toLowerCase() || '';
+      if (selectedPropertyType === 'villas') {
+        return type.includes('villa');
       }
-    };
-    
-    const buildingName = extractBuildingName(property.building_url);
-    return buildingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           property.location.toLowerCase().includes(searchTerm.toLowerCase());
-  }).filter(property => {
-    if (!selectedBedrooms) return true;
-    // Normalize both values for comparison
-    const propertyBedrooms = parseInt(property.bedroom_count).toString();
-    const selectedNormalized = parseInt(selectedBedrooms).toString();
-    return propertyBedrooms === selectedNormalized;
-  });
+      if (selectedPropertyType === 'townhouses') {
+        return type.includes('townhouse');
+      }
+      return true;
+    });
 
   // Get unique bedroom counts for filter options
   const getBedroomOptions = () => {
@@ -214,7 +235,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Bedroom Filter */}
+                {/* Bedroom and Property Type Filter */}
                 <div className="mb-6">
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <div className="flex-1">
@@ -234,6 +255,33 @@ function App() {
                         ))}
                       </select>
                     </div>
+                    {/* Property Type Filter: Only show if selected area is villa/townhouse */}
+                    {(() => {
+                      const areaObj = AREAS.find(a => a.name === selectedArea);
+                      if (areaObj && (areaObj.category === 'villas' || areaObj.category === 'townhouses')) {
+                        return (
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Property Type
+                            </label>
+                            <select
+                              value={selectedPropertyType}
+                              onChange={e => setSelectedPropertyType(e.target.value as 'all' | 'villas' | 'townhouses')}
+                              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                            >
+                              <option value="all">All</option>
+                              <option value="villas">Only Villas</option>
+                              <option value="townhouses">Only Townhouses</option>
+                            </select>
+                          </div>
+                        );
+                      }
+                      // Hide and reset property type filter if not villa/townhouse
+                      if (selectedPropertyType !== 'all') {
+                        setSelectedPropertyType('all');
+                      }
+                      return null;
+                    })()}
                     {(searchTerm || selectedBedrooms) && (
                       <div className="flex items-end">
                         <button

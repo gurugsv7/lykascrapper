@@ -6,8 +6,8 @@ interface AreaFilterProps {
   areas: AreaInfo[];
   selectedArea: string | null;
   onAreaSelect: (areaName: string | null) => void;
-  selectedCategory: 'all' | 'villas' | 'townhouses' | 'apartments';
-  onCategoryChange: (category: 'all' | 'villas' | 'townhouses' | 'apartments') => void;
+  selectedCategory: 'all' | 'villas' | 'townhouses' | 'apartments' | 'villaTownhouse';
+  onCategoryChange: (category: 'all' | 'villas' | 'townhouses' | 'apartments' | 'villaTownhouse') => void;
 }
 
 export const AreaFilter: React.FC<AreaFilterProps> = ({
@@ -20,6 +20,7 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
   const villaAreas = areas.filter(area => area.category === 'villas');
   const townhouseAreas = areas.filter(area => area.category === 'townhouses');
   const apartmentAreas = areas.filter(area => area.category === 'apartments');
+  const villaTownhouseAreas = areas.filter(area => area.category === 'villas' || area.category === 'townhouses');
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6">
@@ -40,30 +41,17 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
           All
         </button>
         <button
-          onClick={() => onCategoryChange('villas')}
+          onClick={() => onCategoryChange('villaTownhouse')}
           className={`
             flex items-center justify-center gap-1 py-2.5 sm:py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
-            ${selectedCategory === 'villas'
-              ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md'
+            ${selectedCategory === 'villaTownhouse'
+              ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-md'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }
           `}
         >
           <Home className="w-3 h-3 sm:w-4 sm:h-4" />
-          Villas
-        </button>
-        <button
-          onClick={() => onCategoryChange('townhouses')}
-          className={`
-            flex items-center justify-center gap-1 py-2.5 sm:py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
-            ${selectedCategory === 'townhouses'
-              ? 'bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }
-          `}
-        >
-          <Building2 className="w-3 h-3 sm:w-4 sm:h-4" />
-          Townhouses
+          Villas & Townhouses
         </button>
         <button
           onClick={() => onCategoryChange('apartments')}
@@ -81,44 +69,20 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
       </div>
 
       {/* Area Dropdowns */}
-      {(selectedCategory === 'all' || selectedCategory === 'villas') && villaAreas.length > 0 && (
+      {(selectedCategory === 'all' || selectedCategory === 'villaTownhouse') && villaTownhouseAreas.length > 0 && (
         <div className="mb-3 sm:mb-4">
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             <Home className="w-4 h-4 inline mr-1" />
-            Villas
+            Villas & Townhouses
           </label>
           <div className="relative">
             <select
-              value={selectedArea && villaAreas.find(a => a.name === selectedArea) ? selectedArea : ''}
+              value={selectedArea && villaTownhouseAreas.find(a => a.name === selectedArea) ? selectedArea : ''}
               onChange={(e) => onAreaSelect(e.target.value || null)}
               className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-8"
             >
-              <option value="">Select villa area...</option>
-              {villaAreas.map((area) => (
-                <option key={area.name} value={area.name}>
-                  {area.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-      )}
-
-      {(selectedCategory === 'all' || selectedCategory === 'townhouses') && townhouseAreas.length > 0 && (
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-            <Building2 className="w-4 h-4 inline mr-1" />
-            Townhouses
-          </label>
-          <div className="relative">
-            <select
-              value={selectedArea && townhouseAreas.find(a => a.name === selectedArea) ? selectedArea : ''}
-              onChange={(e) => onAreaSelect(e.target.value || null)}
-              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-8"
-            >
-              <option value="">Select townhouse area...</option>
-              {townhouseAreas.map((area) => (
+              <option value="">Select villa and townhouse area...</option>
+              {villaTownhouseAreas.map((area) => (
                 <option key={area.name} value={area.name}>
                   {area.name}
                 </option>
@@ -152,6 +116,7 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
           </div>
         </div>
       )}
+
 
       {selectedArea && (
         <button
