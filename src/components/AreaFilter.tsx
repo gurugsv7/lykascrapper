@@ -27,7 +27,7 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Filter by Area</h3>
       
       {/* Category Toggle */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 sm:mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 sm:mb-6">
         <button
           onClick={() => onCategoryChange('all')}
           className={`

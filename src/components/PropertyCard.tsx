@@ -4,9 +4,10 @@ import { Bed, Ruler, Calendar, MapPin, ExternalLink, Building } from 'lucide-rea
 
 interface PropertyCardProps {
   property: Property;
+  areaCategory?: 'villas' | 'townhouses' | 'apartments';
 }
 
-export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+export const PropertyCard: React.FC<PropertyCardProps> = ({ property, areaCategory }) => {
   const formatDate = (dateString: string) => {
     try {
       // Handle the date format "19 July 2025"
@@ -43,7 +44,14 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <div className="mb-3 sm:mb-4">
           <div className="mb-3">
             <div className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold px-3 py-1 rounded-full mb-2">
-             {property.property_type}
+              {property.property_type && property.property_type.trim()
+                ? property.property_type.charAt(0).toUpperCase() + property.property_type.slice(1).toLowerCase()
+                : areaCategory === 'villas'
+                  ? 'Villa'
+                  : areaCategory === 'townhouses'
+                    ? 'Townhouse'
+                    : ''
+              }
             </div>
            <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 mb-2">
              {property.location}
