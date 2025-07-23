@@ -3,7 +3,7 @@ import { AREAS } from './data/areas';
 import { AreaData, Property } from './types/Property';
 import { fetchAreaData } from './services/supabaseClient';
 import { PropertyCard } from './components/PropertyCard';
-import { AreaFilter } from './co_ponents/AreaFilter';
+import { AreaFilter } from './components/AreaFilter';
 import { SummaryStats } from './components/SummaryStats';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { Building, Star, Database, Search } from 'lucide-react';
