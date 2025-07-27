@@ -105,6 +105,11 @@ export const AREAS: AreaInfo[] = [
     fileName: 'district_one_residences.json',
     category: 'apartments',
   
+  },
+  {
+    name: 'JVC',
+    fileName: 'jvc_total.json',
+    category: 'apartments',
   }
 ];
 
