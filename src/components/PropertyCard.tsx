@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Property } from '../types/Property';
 import { Bed, Ruler, Calendar, MapPin, ExternalLink, Building } from 'lucide-react';
 
@@ -8,6 +8,22 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property, areaCategory }) => {
+  const [viewed, setViewed] = useState(false);
+
+  useEffect(() => {
+    const viewedLinks = JSON.parse(localStorage.getItem('viewedBayutLinks') || '[]');
+    setViewed(viewedLinks.includes(property.link));
+  }, [property.link]);
+
+  const handleBayutClick = () => {
+    const viewedLinks = JSON.parse(localStorage.getItem('viewedBayutLinks') || '[]');
+    if (!viewedLinks.includes(property.link)) {
+      viewedLinks.push(property.link);
+      localStorage.setItem('viewedBayutLinks', JSON.stringify(viewedLinks));
+      setViewed(true);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       // Handle the date format "19 July 2025"
@@ -42,24 +58,31 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, areaCatego
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="mb-3 sm:mb-4">
-          <div className="mb-3">
-            <div className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold px-3 py-1 rounded-full mb-2">
-              {property.property_type && property.property_type.trim()
-                ? property.property_type.charAt(0).toUpperCase() + property.property_type.slice(1).toLowerCase()
-                : areaCategory === 'villas'
-                  ? 'Villa'
-                  : areaCategory === 'townhouses'
-                    ? 'Townhouse'
-                    : ''
-              }
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold px-3 py-1 rounded-full">
+                {property.property_type && property.property_type.trim()
+                  ? property.property_type.charAt(0).toUpperCase() + property.property_type.slice(1).toLowerCase()
+                  : areaCategory === 'villas'
+                    ? 'Villa'
+                    : areaCategory === 'townhouses'
+                      ? 'Townhouse'
+                      : ''
+                }
+              </div>
+              {viewed && (
+                <div className="inline-block bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full border border-yellow-600 shadow ml-1 animate-pulse">
+                  Viewed
+                </div>
+              )}
             </div>
-           <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 mb-2">
-             {property.location}
-            </h3>
-           <p className="text-xs sm:text-sm text-gray-600 leading-tight line-clamp-2">
-             {property.title}
-           </p>
           </div>
+          <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 mb-2">
+            {property.location}
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-600 leading-tight line-clamp-2">
+            {property.title}
+          </p>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="text-xl sm:text-2xl font-bold text-green-600">
               {property.price}
@@ -104,6 +127,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, areaCatego
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 w-full justify-center bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-2.5 sm:py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm"
+          onClick={handleBayutClick}
         >
           <span>View on Bayut</span>
           <ExternalLink className="w-4 h-4" />
