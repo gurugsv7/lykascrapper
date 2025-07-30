@@ -116,6 +116,30 @@ function App() {
       return true;
     });
 
+  // Helper: Check if posted_date is today
+  const isPostedToday = (postedDate: string) => {
+    try {
+      const today = new Date();
+      const date = new Date(postedDate);
+      return (
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  // Sort so today's listings come first
+  const sortedProperties = [...filteredProperties].sort((a, b) => {
+    const aToday = isPostedToday(a.posted_date);
+    const bToday = isPostedToday(b.posted_date);
+    if (aToday && !bToday) return -1;
+    if (!aToday && bToday) return 1;
+    return 0;
+  });
+
   // Get unique bedroom counts for filter options
   const getBedroomOptions = () => {
     if (!currentProperties.length) return [];
@@ -297,9 +321,9 @@ function App() {
                     )}
                   </div>
                 </div>
-                {filteredProperties.length > 0 ? (
+                {sortedProperties.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    {filteredProperties.map((property, index) => (
+                    {sortedProperties.map((property, index) => (
                       <PropertyCard
                         key={`${property.link}-${index}`}
                         property={property}
