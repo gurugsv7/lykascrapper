@@ -158,11 +158,12 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
         </div>
 
         {/* Clear Filters */}
-        {(minPrice || maxPrice || bedrooms) && (
+        {(minPrice || maxPrice || bedrooms || sortDate !== 'default') && (
           <button
             onClick={() => {
               onPriceChange(null, null);
               onBedroomChange(null);
+              onSortDateChange('default');
             }}
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 md:py-2 px-3 md:px-4 rounded text-xs md:text-sm font-medium transition-colors duration-200"
           >

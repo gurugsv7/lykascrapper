@@ -342,6 +342,7 @@ function App() {
                           setMinPrice(null);
                           setMaxPrice(null);
                           setSelectedDate('');
+                          setSortDate('default');
                         }}
                         className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
                       >
