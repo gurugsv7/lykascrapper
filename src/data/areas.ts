@@ -105,9 +105,33 @@ export const AREAS: AreaInfo[] = [
     fileName: 'district_one_residences.json',
     category: 'apartments',
   
+  },
+  // JVC Apartments
+  {
+    name: 'Jumeirah Village Circle',
+    fileName: 'jvc_total.json',
+    category: 'apartments',
+    
+  },
+  // Mina Rashid
+  {
+    name: 'Mina Rashid',
+    fileName: 'mina_rashid_total.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Mina Rashid Marina Place',
+    fileName: 'mina_rashid_marina_place.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Dubai Maritime City',
+    fileName: 'dubai_maritime_city_total.json',
+    category: 'apartments'
   }
 ];
 
 export const VILLA_AREAS = AREAS.filter(area => area.category === 'villas');
 export const APARTMENT_AREAS = AREAS.filter(area => area.category === 'apartments');
 export const TOWNHOUSE_AREAS = AREAS.filter(area => area.category === 'townhouses');
+// Note: 'url' property is not part of AreaInfo type and will be ignored by TypeScript.
