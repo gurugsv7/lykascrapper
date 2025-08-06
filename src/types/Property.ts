@@ -10,6 +10,7 @@ export interface Property {
   link: string;
   building_url: string;
   posted_date: string;
+  price_per_sqft?: number;
 }
 
 export interface AreaData {
