@@ -12,6 +12,17 @@ interface PropertyFilterProps {
   onSortDateChange: (sort: string) => void;
 }
 
+interface PropertyFilterProps {
+  isAreaSelected: boolean;
+  minPrice: number | null;
+  maxPrice: number | null;
+  bedrooms: number | null;
+  sortDate: string;
+  onPriceChange: (min: number | null, max: number | null) => void;
+  onBedroomChange: (beds: number | null) => void;
+  onSortDateChange: (sort: string) => void;
+}
+
 export const PropertyFilter: React.FC<PropertyFilterProps> = ({
   isAreaSelected,
   minPrice,
@@ -81,7 +92,7 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
         {/* Sort by Date */}
         <div className="mb-4">
           <label className="block text-[10px] md:text-sm font-medium text-gray-700 mb-1.5">
-            Sort by Date
+            Sort based on Date and Price
           </label>
           <select
             value={sortDate}
@@ -91,6 +102,8 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
             <option value="default">Default</option>
             <option value="newest">Newest to Oldest</option>
             <option value="oldest">Oldest to Newest</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
           </select>
         </div>
 
@@ -102,32 +115,30 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
           </label>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <select
-                value={minPrice || ''}
-                onChange={(e) => onPriceChange(e.target.value ? Number(e.target.value) : null, maxPrice)}
-                className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-8"
-              >
-                <option value="">Min Price</option>
-                {[500000, 1000000, 1500000, 2000000, 3000000, 5000000].map((price) => (
-                  <option key={price} value={price}>
-                    {formatPrice(price)}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="number"
+                min={0}
+                placeholder="Min Price"
+                value={minPrice ?? ''}
+                onChange={e => {
+                  const val = e.target.value;
+                  onPriceChange(val === '' ? null : Number(val), maxPrice);
+                }}
+                className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
             <div>
-              <select
-                value={maxPrice || ''}
-                onChange={(e) => onPriceChange(minPrice, e.target.value ? Number(e.target.value) : null)}
-                className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-8"
-              >
-                <option value="">Max Price</option>
-                {[1000000, 2000000, 3000000, 5000000, 7000000, 10000000].map((price) => (
-                  <option key={price} value={price}>
-                    {formatPrice(price)}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="number"
+                min={0}
+                placeholder="Max Price"
+                value={maxPrice ?? ''}
+                onChange={e => {
+                  const val = e.target.value;
+                  onPriceChange(minPrice, val === '' ? null : Number(val));
+                }}
+                className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
         </div>

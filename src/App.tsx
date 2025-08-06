@@ -7,26 +7,19 @@ import { AreaFilter } from './components/AreaFilter';
 import { SummaryStats } from './components/SummaryStats';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { Building, Star, Database, Search } from 'lucide-react';
-import { PropertyFilter } from './components/PropertyFilter';
 
 function App() {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'villas' | 'townhouses' | 'apartments' | 'villaTownhouse'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'villas' | 'townhouses' | 'apartments'>('all');
   const [loadedAreas, setLoadedAreas] = useState<{ [key: string]: AreaData }>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [bedrooms, setBedrooms] = useState<number | null>(null);
-  const [minPrice, setMinPrice] = useState<number | null>(null);
-  const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'villas' | 'townhouses'>('all');
-  const [selectedDate, setSelectedDate] = useState<string>(''); // '', 'today', '7days', '30days'
-  const [sortDate, setSortDate] = useState<string>('default'); // 'default', 'newest', 'oldest'
+  const [selectedBedrooms, setSelectedBedrooms] = useState<string>('');
 
   // Filter areas based on selected category
   const filteredAreas = AREAS.filter(area => {
     if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'villaTownhouse') return area.category === 'villas' || area.category === 'townhouses';
     return area.category === selectedCategory;
   });
 
@@ -66,11 +59,6 @@ function App() {
   // Handle area selection
   const handleAreaSelect = async (areaName: string | null) => {
     setSelectedArea(areaName);
-    // Reset property type filter if area is not villa/townhouse
-    const areaObj = AREAS.find(a => a.name === areaName);
-    if (!areaObj || (areaObj.category !== 'villas' && areaObj.category !== 'townhouses')) {
-      setSelectedPropertyType('all');
-    }
     if (areaName) {
       await loadAreaData(areaName);
     }
@@ -82,101 +70,30 @@ function App() {
     : [];
 
   // Filter properties based on search term
-  const filteredProperties = currentProperties
-    .filter(property => {
-      if (!searchTerm) return true;
-      
-      const extractBuildingName = (buildingUrl: string) => {
-        try {
-          const parts = buildingUrl.split('/');
-          const buildingPart = parts[parts.length - 2] || parts[parts.length - 1];
-          return buildingPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        } catch {
-          return '';
-        }
-      };
-      
-      const buildingName = extractBuildingName(property.building_url);
-      return buildingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             property.location.toLowerCase().includes(searchTerm.toLowerCase());
-    })
-    .filter(property => {
-      if (!bedrooms) return true;
-      const propertyBedrooms = parseInt(property.bedroom_count);
-      return propertyBedrooms === bedrooms;
-    })
-    .filter(property => {
-      if (selectedPropertyType === 'all') return true;
-      // Filter by property_type field (case-insensitive)
-      const type = property.property_type?.toLowerCase() || '';
-      if (selectedPropertyType === 'villas') {
-        return type.includes('villa');
+  const filteredProperties = currentProperties.filter(property => {
+    if (!searchTerm) return true;
+    
+    const extractBuildingName = (buildingUrl: string) => {
+      try {
+        const parts = buildingUrl.split('/');
+        const buildingPart = parts[parts.length - 2] || parts[parts.length - 1];
+        return buildingPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      } catch {
+        return '';
       }
-      if (selectedPropertyType === 'townhouses') {
-        return type.includes('townhouse');
-      }
-      return true;
-    })
-    .filter(property => {
-      if (!selectedDate) return true;
-      const posted = new Date(property.posted_date);
-      const now = new Date();
-      if (selectedDate === 'today') {
-        return (
-          posted.getDate() === now.getDate() &&
-          posted.getMonth() === now.getMonth() &&
-          posted.getFullYear() === now.getFullYear()
-        );
-      }
-      if (selectedDate === '7days') {
-        const diff = (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24);
-        return diff <= 7;
-      }
-      if (selectedDate === '30days') {
-        const diff = (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24);
-        return diff <= 30;
-      }
-      return true;
-    })
-    .filter(property => {
-      const price = Number(property.price?.toString().replace(/[^0-9.]/g, '')) || 0;
-      if (minPrice && price < minPrice) return false;
-      if (maxPrice && price > maxPrice) return false;
-      return true;
-    });
-
-  // Helper: Check if posted_date is today
-  const isPostedToday = (postedDate: string) => {
-    try {
-      const today = new Date();
-      const date = new Date(postedDate);
-      return (
-        date.getDate() === today.getDate() &&
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()
-      );
-    } catch {
-      return false;
-    }
-  };
-
- // Sort properties by date if requested
- let sortedProperties = [...filteredProperties];
- if (sortDate === 'newest') {
-   sortedProperties.sort((a, b) => new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime());
- } else if (sortDate === 'oldest') {
-   sortedProperties.sort((a, b) => new Date(a.posted_date).getTime() - new Date(b.posted_date).getTime());
- } else {
-   // Default: today's listings first, then others
-   sortedProperties.sort((a, b) => {
-     const aToday = isPostedToday(a.posted_date);
-     const bToday = isPostedToday(b.posted_date);
-     if (aToday && !bToday) return -1;
-     if (!aToday && bToday) return 1;
-     return 0;
-   });
- }
+    };
+    
+    const buildingName = extractBuildingName(property.building_url);
+    return buildingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           property.location.toLowerCase().includes(searchTerm.toLowerCase());
+  }).filter(property => {
+    if (!selectedBedrooms) return true;
+    // Normalize both values for comparison
+    const propertyBedrooms = parseInt(property.bedroom_count).toString();
+    const selectedNormalized = parseInt(selectedBedrooms).toString();
+    return propertyBedrooms === selectedNormalized;
+  });
 
   // Get unique bedroom counts for filter options
   const getBedroomOptions = () => {
@@ -297,34 +214,47 @@ function App() {
                   </div>
                 </div>
 
-                {/* Property Filters */}
+                {/* Bedroom Filter */}
                 <div className="mb-6">
-                  <PropertyFilter
-                  isAreaSelected={!!selectedArea}
-                  minPrice={minPrice}
-                  maxPrice={maxPrice}
-                  bedrooms={bedrooms}
-                  sortDate={sortDate}
-                  onPriceChange={(min, max) => {
-                    setMinPrice(min);
-                    setMaxPrice(max);
-                  }}
-                  onBedroomChange={setBedrooms}
-                  onSortDateChange={setSortDate}
-                  />
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Filter by Bedrooms
+                      </label>
+                      <select
+                        value={selectedBedrooms}
+                        onChange={(e) => setSelectedBedrooms(e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      >
+                        <option value="">All Bedrooms</option>
+                        {getBedroomOptions().map((bedroom) => (
+                          <option key={bedroom} value={bedroom}>
+                            {bedroom} Bedroom{bedroom !== '1' ? 's' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {(searchTerm || selectedBedrooms) && (
+                      <div className="flex items-end">
+                        <button
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedBedrooms('');
+                          }}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors duration-200"
+                        >
+                          Clear Filters
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {sortedProperties.length > 0 ? (
+                {filteredProperties.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    {sortedProperties.map((property, index) => (
+                    {filteredProperties.map((property, index) => (
                       <PropertyCard
                         key={`${property.link}-${index}`}
                         property={property}
-                        areaCategory={
-                          (() => {
-                            const areaObj = AREAS.find(a => a.name === selectedArea);
-                            return areaObj ? areaObj.category : undefined;
-                          })()
-                        }
                       />
                     ))}
                   </div>
@@ -332,17 +262,13 @@ function App() {
                   <div className="text-center py-12">
                     <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-sm sm:text-base text-gray-600">
-                      {(searchTerm || bedrooms || selectedDate || minPrice || maxPrice) ? 'No properties match your filters.' : 'No properties found in this area.'}
+                      {(searchTerm || selectedBedrooms) ? 'No properties match your filters.' : 'No properties found in this area.'}
                     </p>
-                    {(searchTerm || bedrooms || selectedDate || minPrice || maxPrice) && (
+                    {(searchTerm || selectedBedrooms) && (
                       <button
                         onClick={() => {
                           setSearchTerm('');
-                          setBedrooms(null);
-                          setMinPrice(null);
-                          setMaxPrice(null);
-                          setSelectedDate('');
-                          setSortDate('default');
+                          setSelectedBedrooms('');
                         }}
                         className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
                       >

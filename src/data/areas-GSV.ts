@@ -105,6 +105,26 @@ export const AREAS: AreaInfo[] = [
     fileName: 'district_one_residences.json',
     category: 'apartments',
   
+  },
+  {
+    name: 'JVC',
+    fileName: 'jvc_total.json',
+    category: 'apartments',
+  },
+  {
+    name: 'Mina Rashid',
+    fileName: 'mina_rashid_total.json',
+    category: 'apartments',
+  },
+  {
+    name: 'Mina Rashid Marina Place',
+    fileName: 'mina_rashid_marina_place.json',
+    category: 'apartments',
+  },
+  {
+    name: 'Dubai Maritime City',
+    fileName: 'dubai_maritime_city_total.json',
+    category: 'apartments',
   }
 ];
 
