@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AREAS } from './data/areas';
-import { AreaData, Property } from './types/Property';
+import { AreaData } from './types/Property';
 import { fetchAreaData } from './services/supabaseClient';
 import { PropertyCard } from './components/PropertyCard';
 import { AreaFilter } from './components/AreaFilter';
@@ -16,6 +16,34 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('');
+  const [buildingSearchTerm, setBuildingSearchTerm] = useState<string>(''); // for listing search bar
+  const [cancelLoading, setCancelLoading] = useState<boolean>(false);
+
+  // Incrementally load all areas on mount, but allow cancellation
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (const area of AREAS) {
+        if (cancelled) break;
+        if (!loadedAreas[area.name]) {
+          await loadAreaData(area.name);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancelLoading]);
+
+  // When a filter or GPT search for a specific area is performed, cancel background loading and load only that area
+  const handleAreaOrGPTSearch = async (areaName: string | null) => {
+    setCancelLoading(c => !c); // trigger cancellation of background loading
+    if (areaName) {
+      await loadAreaData(areaName);
+      setSelectedArea(areaName);
+    } else {
+      setSelectedArea(null);
+    }
+  };
 
   // Filter areas based on selected category
   const filteredAreas = AREAS.filter(area => {
@@ -58,42 +86,57 @@ function App() {
 
   // Handle area selection
   const handleAreaSelect = async (areaName: string | null) => {
-    setSelectedArea(areaName);
-    if (areaName) {
-      await loadAreaData(areaName);
-    }
+    await handleAreaOrGPTSearch(areaName);
   };
 
   // Get current properties
-  const currentProperties = selectedArea && loadedAreas[selectedArea] 
-    ? loadedAreas[selectedArea].properties 
-    : [];
+  // Aggregate all properties if no area is selected, else show selected area
+  const currentProperties =
+    selectedArea && loadedAreas[selectedArea]
+      ? loadedAreas[selectedArea].properties
+      : !selectedArea
+        ? Object.values(loadedAreas).flatMap(area => area.properties)
+        : [];
+
+  // Show all loaded properties at start, even if loading is ongoing
+  const hasAnyProperties = Object.values(loadedAreas).some(area => area.properties && area.properties.length > 0);
 
   // Filter properties based on search term
-  const filteredProperties = currentProperties.filter(property => {
-    if (!searchTerm) return true;
-    
-    const extractBuildingName = (buildingUrl: string) => {
-      try {
-        const parts = buildingUrl.split('/');
-        const buildingPart = parts[parts.length - 2] || parts[parts.length - 1];
-        return buildingPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      } catch {
-        return '';
+  const filteredProperties = currentProperties
+    .filter(property => {
+      // Category filter (property type)
+      if (selectedCategory !== "all") {
+        const type = property.property_type?.toLowerCase() || '';
+        if (selectedCategory === "apartments" && !type.includes("apartment")) return false;
+        if (selectedCategory === "villas" && !type.includes("villa")) return false;
+        if (selectedCategory === "townhouses" && !type.includes("townhouse")) return false;
       }
-    };
-    
-    const buildingName = extractBuildingName(property.building_url);
-    return buildingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           property.location.toLowerCase().includes(searchTerm.toLowerCase());
-  }).filter(property => {
-    if (!selectedBedrooms) return true;
-    // Normalize both values for comparison
-    const propertyBedrooms = parseInt(property.bedroom_count).toString();
-    const selectedNormalized = parseInt(selectedBedrooms).toString();
-    return propertyBedrooms === selectedNormalized;
-  });
+      return true;
+    })
+    .filter(property => {
+      // Use buildingSearchTerm for the listing search bar only
+      if (!buildingSearchTerm) return true;
+      const extractBuildingName = (buildingUrl: string) => {
+        try {
+          const parts = buildingUrl.split('/');
+          const buildingPart = parts[parts.length - 2] || parts[parts.length - 1];
+          return buildingPart.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        } catch {
+          return '';
+        }
+      };
+      const buildingName = extractBuildingName(property.building_url);
+      return buildingName.toLowerCase().includes(buildingSearchTerm.toLowerCase()) ||
+             property.title.toLowerCase().includes(buildingSearchTerm.toLowerCase()) ||
+             property.location.toLowerCase().includes(buildingSearchTerm.toLowerCase());
+    })
+    .filter(property => {
+      if (!selectedBedrooms) return true;
+      // Normalize both values for comparison
+      const propertyBedrooms = parseInt(property.bedroom_count).toString();
+      const selectedNormalized = parseInt(selectedBedrooms).toString();
+      return propertyBedrooms === selectedNormalized;
+    });
 
   // Get unique bedroom counts for filter options
   const getBedroomOptions = () => {
@@ -133,6 +176,92 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Summary Stats */}
         <SummaryStats loadedAreas={loadedAreas} totalAreas={AREAS.length} />
+
+        {/* GPT-like Search Input */}
+        <div className="mt-6 mb-6 flex items-center gap-2">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            onKeyDown={async e => {
+              if (e.key === "Enter") {
+                setSelectedBedrooms('');
+                // Example GPT parsing: extract bedrooms, property type, and area
+                let q = e.currentTarget.value.toLowerCase();
+                const bedMatch = q.match(/(\d+)\s*bed(room)?/);
+                if (bedMatch) setSelectedBedrooms(bedMatch[1]);
+                // Property type extraction
+                if (q.includes("apartment")) setSelectedCategory("apartments");
+                else if (q.includes("villa")) setSelectedCategory("villas");
+                else if (q.includes("townhouse")) setSelectedCategory("townhouses");
+                else setSelectedCategory("all");
+                // Area extraction (simple): look for "in AREA"
+                const areaMatch = q.match(/in\s+([a-zA-Z\s]+)/);
+                if (areaMatch) {
+                  // Try exact match, then partial, then acronym
+                  const inputArea = areaMatch[1].trim().toLowerCase();
+                  let areaObj = AREAS.find(a => a.name.toLowerCase() === inputArea);
+                  if (!areaObj) {
+                    areaObj = AREAS.find(a => a.name.toLowerCase().includes(inputArea));
+                  }
+                  if (!areaObj) {
+                    // Acronym match (e.g., "jvc" for "Jumeirah Village Circle")
+                    areaObj = AREAS.find(a => {
+                      const acronym = a.name.split(/\s+/).map(w => w[0]).join('').toLowerCase();
+                      return acronym === inputArea;
+                    });
+                  }
+                  if (areaObj) {
+                    await handleAreaOrGPTSearch(areaObj.name);
+                    return;
+                  }
+                }
+                // If no area, show all
+                await handleAreaOrGPTSearch(null);
+              }
+            }}
+            placeholder="Ask for properties e.g. '3 bedroom apartment in dubai marina'"
+            className="flex-1 bg-white border border-gray-300 rounded px-2 md:px-3 py-2 md:py-3 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            onClick={async () => {
+              setSelectedBedrooms('');
+              let q = searchTerm.toLowerCase();
+              const bedMatch = q.match(/(\d+)\s*bed(room)?/);
+              if (bedMatch) setSelectedBedrooms(bedMatch[1]);
+              // Property type extraction
+              if (q.includes("apartment")) setSelectedCategory("apartments");
+              else if (q.includes("villa")) setSelectedCategory("villas");
+              else if (q.includes("townhouse")) setSelectedCategory("townhouses");
+              else setSelectedCategory("all");
+              const areaMatch = q.match(/in\s+([a-zA-Z\s]+)/);
+              if (areaMatch) {
+                // Try exact match, then partial, then acronym
+                const inputArea = areaMatch[1].trim().toLowerCase();
+                let areaObj = AREAS.find(a => a.name.toLowerCase() === inputArea);
+                if (!areaObj) {
+                  areaObj = AREAS.find(a => a.name.toLowerCase().includes(inputArea));
+                }
+                if (!areaObj) {
+                  // Acronym match (e.g., "jvc" for "Jumeirah Village Circle")
+                  areaObj = AREAS.find(a => {
+                    const acronym = a.name.split(/\s+/).map(w => w[0]).join('').toLowerCase();
+                    return acronym === inputArea;
+                  });
+                }
+                if (areaObj) {
+                  await handleAreaOrGPTSearch(areaObj.name);
+                  return;
+                }
+              }
+              await handleAreaOrGPTSearch(null);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:py-3 rounded transition-colors duration-200"
+            aria-label="Search"
+          >
+            🔍
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {/* Sidebar */}
@@ -189,11 +318,12 @@ function App() {
               </div>
             )}
 
-            {selectedArea && loadedAreas[selectedArea] && !loading && (
+            {(selectedArea && loadedAreas[selectedArea] && !loading) ||
+             (!selectedArea && hasAnyProperties && !loading) ? (
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4 sm:mb-6">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    Properties in {selectedArea}
+                    {selectedArea ? `Properties in ${selectedArea}` : "All Properties"}
                   </h2>
                   <div className="text-sm sm:text-base text-gray-600">
                     {filteredProperties.length} of {currentProperties.length} properties
@@ -207,8 +337,14 @@ function App() {
                     <input
                       type="text"
                       placeholder="Search by building name, title, or location..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      value={buildingSearchTerm}
+                      onChange={(e) => setBuildingSearchTerm(e.target.value)}
+                      onKeyDown={e => {
+                        // Prevent GPT search logic in this bar
+                        if (e.key === "Enter") {
+                          // Do nothing special, just let the filter run
+                        }
+                      }}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
                     />
                   </div>
@@ -278,16 +414,16 @@ function App() {
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
 
-            {!selectedArea && !loading && (
+            {!selectedArea && !hasAnyProperties && !loading && (
               <div className="text-center py-12">
                 <Star className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                   Welcome to Lyka Scrapper
                 </h3>
                 <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto mb-6 px-4">
-                  Select an area from the filters to explore premium properties 
+                  Select an area from the filters to explore premium properties
                   across Dubai's most exclusive neighborhoods.
                 </p>
               </div>
