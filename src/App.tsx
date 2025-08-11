@@ -10,7 +10,7 @@ import { Building, Star, Database, Search } from 'lucide-react';
 
 function App() {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'villas' | 'townhouses' | 'apartments'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'apartments' | 'villaTownhouse'>('all');
   const [loadedAreas, setLoadedAreas] = useState<{ [key: string]: AreaData }>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<string>(''); // '', 'today', '7days', '30days'
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
-  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'villas' | 'townhouses' | 'apartments'>('all');
+  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'apartments' | 'villaTownhouse'>('all');
   const [sortDate, setSortDate] = useState<string>('default'); // 'default', 'newest', 'oldest'
   const [sortPrice, setSortPrice] = useState<string>('default'); // 'default', 'highToLow', 'lowToHigh'
   const [buildingSearchTerm, setBuildingSearchTerm] = useState<string>(''); // for listing search bar
@@ -54,7 +54,9 @@ function App() {
   // Filter areas based on selected category
   const filteredAreas = AREAS.filter(area => {
     if (selectedCategory === 'all') return true;
-    return area.category === selectedCategory;
+    if (selectedCategory === 'villaTownhouse') return area.category === 'villas' || area.category === 'townhouses';
+    if (selectedCategory === 'apartments') return area.category === 'apartments';
+    return false;
   });
 
   // Load area data
@@ -114,8 +116,7 @@ function App() {
       if (selectedCategory !== "all") {
         const type = property.property_type?.toLowerCase() || '';
         if (selectedCategory === "apartments" && !type.includes("apartment")) return false;
-        if (selectedCategory === "villas" && !type.includes("villa")) return false;
-        if (selectedCategory === "townhouses" && !type.includes("townhouse")) return false;
+        if (selectedCategory === "villaTownhouse" && !(type.includes("villa") || type.includes("townhouse"))) return false;
       }
       return true;
     })
@@ -245,8 +246,7 @@ function App() {
                 if (bedMatch) setSelectedBedrooms(bedMatch[1]);
                 // Property type extraction
                 if (q.includes("apartment")) setSelectedCategory("apartments");
-                else if (q.includes("villa")) setSelectedCategory("villas");
-                else if (q.includes("townhouse")) setSelectedCategory("townhouses");
+                else if (q.includes("villa") || q.includes("townhouse")) setSelectedCategory("villaTownhouse");
                 else setSelectedCategory("all");
                 // Area extraction (simple): look for "in AREA"
                 const areaMatch = q.match(/in\s+([a-zA-Z\s]+)/);
@@ -284,8 +284,7 @@ function App() {
               if (bedMatch) setSelectedBedrooms(bedMatch[1]);
               // Property type extraction
               if (q.includes("apartment")) setSelectedCategory("apartments");
-              else if (q.includes("villa")) setSelectedCategory("villas");
-              else if (q.includes("townhouse")) setSelectedCategory("townhouses");
+              else if (q.includes("villa") || q.includes("townhouse")) setSelectedCategory("villaTownhouse");
               else setSelectedCategory("all");
               const areaMatch = q.match(/in\s+([a-zA-Z\s]+)/);
               if (areaMatch) {
