@@ -16,6 +16,12 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(''); // '', 'today', '7days', '30days'
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'villas' | 'townhouses' | 'apartments'>('all');
+  const [sortDate, setSortDate] = useState<string>('default'); // 'default', 'newest', 'oldest'
+  const [sortPrice, setSortPrice] = useState<string>('default'); // 'default', 'highToLow', 'lowToHigh'
   const [buildingSearchTerm, setBuildingSearchTerm] = useState<string>(''); // for listing search bar
   const [cancelLoading, setCancelLoading] = useState<boolean>(false);
 
@@ -136,6 +142,53 @@ function App() {
       const propertyBedrooms = parseInt(property.bedroom_count).toString();
       const selectedNormalized = parseInt(selectedBedrooms).toString();
       return propertyBedrooms === selectedNormalized;
+    })
+    // Filter by date
+    .filter(property => {
+      if (!selectedDate) return true;
+      const date = new Date(property.posted_date);
+      const now = new Date();
+      const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+      
+      switch(selectedDate) {
+        case 'today':
+          return diffDays < 1;
+        case '7days':
+          return diffDays <= 7;
+        case '30days':
+          return diffDays <= 30;
+        default:
+          return true;
+      }
+    })
+    // Filter by price range
+    .filter(property => {
+      const price = parseInt(property.price.replace(/[^0-9]/g, ''));
+      const min = minPrice ? parseInt(minPrice) * 1000000 : null;
+      const max = maxPrice ? parseInt(maxPrice) * 1000000 : null;
+      
+      if (min && max) return price >= min && price <= max;
+      if (min) return price >= min;
+      if (max) return price <= max;
+      return true;
+    })
+    // Sort by date
+    .sort((a, b) => {
+      if (sortDate === 'newest') {
+        return new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime();
+      } else if (sortDate === 'oldest') {
+        return new Date(a.posted_date).getTime() - new Date(b.posted_date).getTime();
+      }
+      return 0;
+    })
+    // Sort by price
+    .sort((a, b) => {
+      if (sortPrice === 'highToLow') {
+        return parseInt(b.price.replace(/[^0-9]/g, '')) - parseInt(a.price.replace(/[^0-9]/g, ''));
+      } else if (sortPrice === 'lowToHigh') {
+        return parseInt(a.price.replace(/[^0-9]/g, '')) - parseInt(b.price.replace(/[^0-9]/g, ''));
+      }
+      return 0;
     });
 
   // Get unique bedroom counts for filter options
@@ -428,6 +481,123 @@ function App() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Floating Filter Button and Modal */}
+        <div className="fixed bottom-4 right-4 z-50 sm:hidden">
+          <button 
+            className="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors duration-200"
+            onClick={() => {
+              const modal = document.getElementById('filterModal');
+              if (modal) modal.classList.toggle('hidden');
+            }}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" 
+              fill="currentColor" 
+              className="w-6 h-6"
+            >
+              <path d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+            </svg>
+          </button>
+
+          {/* Filter Modal */}
+          <div id="filterModal" className="hidden fixed bottom-0 left-0 w-full bg-white rounded-t-xl shadow-xl border-t border-gray-200 p-4">
+            {/* Exit Button */}
+            <button
+              onClick={() => {
+                const modal = document.getElementById('filterModal');
+                if (modal) modal.classList.add('hidden');
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              aria-label="Close filter modal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <div className="space-y-6 pt-2">
+              {/* Sort by Date Row */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Sort by Date</label>
+                <select
+                  value={sortDate}
+                  onChange={(e) => setSortDate(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                >
+                  <option value="default">Default ✓</option>
+                  <option value="newest">Newest to Oldest</option>
+                  <option value="oldest">Oldest to Newest</option>
+                </select>
+              </div>
+
+              {/* Price Range Row */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Price Range (AED)</label>
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="5.0M"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="Max Price"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Bedrooms Row */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Bedrooms</label>
+                <div className="flex gap-2">
+                  {["1", "2", "3", "4", "5", "6+"].map((bed) => (
+                    <button
+                      key={bed}
+                      onClick={() => setSelectedBedrooms(selectedBedrooms === bed ? "" : bed)}
+                      className={`flex-1 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
+                        selectedBedrooms === bed
+                          ? "bg-gray-800 text-white"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {bed}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedBedrooms('');
+                  setSelectedDate('');
+                  setMinPrice('');
+                  setMaxPrice('');
+                  setSelectedPropertyType('all');
+                  setSortDate('default');
+                  setSortPrice('default');
+                  const modal = document.getElementById('filterModal');
+                  if (modal) modal.classList.add('hidden');
+                }}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg text-base font-medium transition-colors duration-200"
+              >
+                Clear Filters
+              </button>
+            </div>
           </div>
         </div>
       </main>
