@@ -121,7 +121,7 @@ export const AREAS: AreaInfo[] = [
   },
   {
     name: 'Mina Rashid Marina Place',
-    fileName: ' marina_place_total.json',
+    fileName: 'marina_place_total.json',
     category: 'apartments'
   },
   {
