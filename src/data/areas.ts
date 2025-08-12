@@ -28,31 +28,31 @@ export const AREAS: AreaInfo[] = [
   },
   {
     name: 'Villanova',
-    fileName: 'villanova.json',
+    fileName: 'villanova_total.json',
     category: 'townhouses',
     
   },
   {
     name: 'Tilal Al Ghaf',
-    fileName: 'tilal_al_ghaf.json',
+    fileName: 'tilal_al_ghaf_total.json',
     category: 'townhouses',
     
   },
   {
     name: 'The Villa',
-    fileName: 'the_villa.json',
+    fileName: 'the_villa_total.json',
     category: 'villas',
     
   },
   {
     name: 'Jumeirah Park',
-    fileName: 'Jumeirah_park.json',
+    fileName: 'Jumeirah_park_total.json',
     category: 'townhouses',
     
   },
   {
     name: 'The Springs',
-    fileName: 'the_springs.json',
+    fileName: 'the_springs_total.json',
     category: 'townhouses',
     
   },
@@ -72,37 +72,37 @@ export const AREAS: AreaInfo[] = [
   },
   {
     name: 'Business Bay',
-    fileName: 'business_bay.json',
+    fileName: 'business_bay_total.json',
     category: 'apartments',
     
   },
   {
     name: 'Al Kifaf',
-    fileName: 'al_kifaf.json',
+    fileName: 'al_kifaf_total.json',
     category: 'apartments',
     
   },
   {
     name: 'Dubai Marina',
-    fileName: 'dubai_marina.json',
+    fileName: 'dubai_marina_total.json',
     category: 'apartments',
     
   },
   {
     name: 'DIFC',
-    fileName: 'difc.json',
+    fileName: 'difc_total.json',
     category: 'apartments',
     
   },
   {
     name: 'Jumeirah Garden City',
-    fileName: 'jumeirah_garden_city.json',
+    fileName: 'jumeirah_garden_city_total.json',
     category: 'apartments',
     
   },
   {
     name: 'District One Residences',
-    fileName: 'district_one_residences.json',
+    fileName: 'district_one_residences_total.json',
     category: 'apartments',
   
   },
