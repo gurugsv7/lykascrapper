@@ -7,9 +7,11 @@ interface PropertyFilterProps {
   maxPrice: number | null;
   bedrooms: number | null;
   sortDate: string;
+  sortPrice: string;
   onPriceChange: (min: number | null, max: number | null) => void;
   onBedroomChange: (beds: number | null) => void;
   onSortDateChange: (sort: string) => void;
+  onSortPriceChange: (sort: string) => void;
 }
 
 interface PropertyFilterProps {
@@ -29,9 +31,11 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
   maxPrice,
   bedrooms,
   sortDate,
+  sortPrice,
   onPriceChange,
   onBedroomChange,
-  onSortDateChange
+  onSortDateChange,
+  onSortPriceChange
 }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
@@ -92,7 +96,7 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
         {/* Sort by Date */}
         <div className="mb-4">
           <label className="block text-[10px] md:text-sm font-medium text-gray-700 mb-1.5">
-            Sort based on Date and Price
+            Sort by Date
           </label>
           <select
             value={sortDate}
@@ -102,8 +106,21 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
             <option value="default">Default</option>
             <option value="newest">Newest to Oldest</option>
             <option value="oldest">Oldest to Newest</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+        {/* Sort by Price */}
+        <div className="mb-4">
+          <label className="block text-[10px] md:text-sm font-medium text-gray-700 mb-1.5">
+            Sort by Price
+          </label>
+          <select
+            value={sortPrice}
+            onChange={e => onSortPriceChange(e.target.value)}
+            className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-8"
+          >
+            <option value="default">Default</option>
+            <option value="highToLow">Highest to Lowest</option>
+            <option value="lowToHigh">Lowest to Highest</option>
           </select>
         </div>
 

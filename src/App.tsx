@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+// Add PropertyFilter import above
 import { AREAS } from './data/areas';
 import { AreaData } from './types/Property';
 import { fetchAreaData } from './services/supabaseClient';
 import { PropertyCard } from './components/PropertyCard';
 import { AreaFilter } from './components/AreaFilter';
+import { PropertyFilter } from './components/PropertyFilter';
 import { SummaryStats } from './components/SummaryStats';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { Building, Star, Database, Search } from 'lucide-react';
@@ -231,6 +233,25 @@ function App() {
         {/* Summary Stats */}
         <SummaryStats loadedAreas={loadedAreas} totalAreas={AREAS.length} />
 
+        {/* Property Filter Bar */}
+        <div className="my-4">
+          <PropertyFilter
+            isAreaSelected={true}
+            minPrice={minPrice ? parseInt(minPrice) : null}
+            maxPrice={maxPrice ? parseInt(maxPrice) : null}
+            bedrooms={selectedBedrooms ? parseInt(selectedBedrooms) : null}
+            sortDate={sortDate}
+            sortPrice={sortPrice}
+            onPriceChange={(min, max) => {
+              setMinPrice(min !== null ? min.toString() : '');
+              setMaxPrice(max !== null ? max.toString() : '');
+            }}
+            onBedroomChange={beds => setSelectedBedrooms(beds !== null ? beds.toString() : '')}
+            onSortDateChange={setSortDate}
+            onSortPriceChange={setSortPrice}
+          />
+        </div>
+
         {/* GPT-like Search Input */}
         <div className="mt-6 mb-6 flex items-center gap-2">
           <input
@@ -240,8 +261,52 @@ function App() {
             onKeyDown={async e => {
               if (e.key === "Enter") {
                 setSelectedBedrooms('');
-                // Example GPT parsing: extract bedrooms, property type, and area
                 let q = e.currentTarget.value.toLowerCase();
+
+                // Date parsing
+                const todayMatch = q.match(/today/);
+                const last7DaysMatch = q.match(/last\s*7\s*days/);
+                const last30DaysMatch = q.match(/last\s*30\s*days/);
+                const dateMatch = q.match(/on\s*(\d{1,2})(st|nd|rd|th)?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?/);
+
+                if (todayMatch) {
+                  setSelectedDate('today');
+                } else if (last7DaysMatch) {
+                  setSelectedDate('7days');
+                } else if (last30DaysMatch) {
+                  setSelectedDate('30days');
+                } else if (dateMatch) {
+                  // Parse date like "on 13th august"
+                  const day = dateMatch[1];
+                  const month = dateMatch[3];
+                  const year = new Date().getFullYear();
+                  const dateStr = `${day} ${month} ${year}`;
+                  setSelectedDate(dateStr);
+                } else {
+                  setSelectedDate('');
+                }
+
+                // Price parsing
+                const priceRangeMatch = q.match(/(?:range|between)\s*(\d+\.?\d*)\s*m?\s*(?:to|and|-)\s*(\d+\.?\d*)\s*m?/);
+                const underMatch = q.match(/under\s*(\d+\.?\d*)\s*m?/);
+                const aboveMatch = q.match(/above\s*(\d+\.?\d*)\s*m?/);
+
+                if (priceRangeMatch) {
+                  setMinPrice(priceRangeMatch[1]);
+                  setMaxPrice(priceRangeMatch[2]);
+                } else if (underMatch) {
+                  setMinPrice('');
+                  setMaxPrice(underMatch[1]);
+                } else if (aboveMatch) {
+                  setMinPrice(aboveMatch[1]);
+                  setMaxPrice('');
+                } else {
+                  // fallback: clear price filters if not found
+                  setMinPrice('');
+                  setMaxPrice('');
+                }
+
+                // Example GPT parsing: extract bedrooms, property type, and area
                 const bedMatch = q.match(/(\d+)\s*bed(room)?/);
                 if (bedMatch) setSelectedBedrooms(bedMatch[1]);
                 // Property type extraction
@@ -280,6 +345,49 @@ function App() {
             onClick={async () => {
               setSelectedBedrooms('');
               let q = searchTerm.toLowerCase();
+
+              // Date parsing
+              const todayMatch = q.match(/today/);
+              const last7DaysMatch = q.match(/last\s*7\s*days/);
+              const last30DaysMatch = q.match(/last\s*30\s*days/);
+              const dateMatch = q.match(/on\s*(\d{1,2})(st|nd|rd|th)?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?/);
+
+              if (todayMatch) {
+                setSelectedDate('today');
+              } else if (last7DaysMatch) {
+                setSelectedDate('7days');
+              } else if (last30DaysMatch) {
+                setSelectedDate('30days');
+              } else if (dateMatch) {
+                // Parse date like "on 13th august"
+                const day = dateMatch[1];
+                const month = dateMatch[3];
+                const year = new Date().getFullYear();
+                const dateStr = `${day} ${month} ${year}`;
+                setSelectedDate(dateStr);
+              } else {
+                setSelectedDate('');
+              }
+
+              // Price parsing
+              const priceRangeMatch = q.match(/(?:range|between)\s*(\d+\.?\d*)\s*m?\s*(?:to|and|-)\s*(\d+\.?\d*)\s*m?/);
+              const underMatch = q.match(/under\s*(\d+\.?\d*)\s*m?/);
+              const aboveMatch = q.match(/above\s*(\d+\.?\d*)\s*m?/);
+
+              if (priceRangeMatch) {
+                setMinPrice(priceRangeMatch[1]);
+                setMaxPrice(priceRangeMatch[2]);
+              } else if (underMatch) {
+                setMinPrice('');
+                setMaxPrice(underMatch[1]);
+              } else if (aboveMatch) {
+                setMinPrice(aboveMatch[1]);
+                setMaxPrice('');
+              } else {
+                setMinPrice('');
+                setMaxPrice('');
+              }
+
               const bedMatch = q.match(/(\d+)\s*bed(room)?/);
               if (bedMatch) setSelectedBedrooms(bedMatch[1]);
               // Property type extraction
@@ -484,121 +592,6 @@ function App() {
         </div>
 
         {/* Floating Filter Button and Modal */}
-        <div className="fixed bottom-4 right-4 z-50 sm:hidden">
-          <button 
-            className="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors duration-200"
-            onClick={() => {
-              const modal = document.getElementById('filterModal');
-              if (modal) modal.classList.toggle('hidden');
-            }}
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 24 24" 
-              fill="currentColor" 
-              className="w-6 h-6"
-            >
-              <path d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
-            </svg>
-          </button>
-
-          {/* Filter Modal */}
-          <div id="filterModal" className="hidden fixed bottom-0 left-0 w-full bg-white rounded-t-xl shadow-xl border-t border-gray-200 p-4">
-            {/* Exit Button */}
-            <button
-              onClick={() => {
-                const modal = document.getElementById('filterModal');
-                if (modal) modal.classList.add('hidden');
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-              aria-label="Close filter modal"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="space-y-6 pt-2">
-              {/* Sort by Date Row */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Sort by Date</label>
-                <select
-                  value={sortDate}
-                  onChange={(e) => setSortDate(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                >
-                  <option value="default">Default ✓</option>
-                  <option value="newest">Newest to Oldest</option>
-                  <option value="oldest">Oldest to Newest</option>
-                </select>
-              </div>
-
-              {/* Price Range Row */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Price Range (AED)</label>
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    placeholder="5.0M"
-                    value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    placeholder="Max Price"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Bedrooms Row */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Bedrooms</label>
-                <div className="flex gap-2">
-                  {["1", "2", "3", "4", "5", "6+"].map((bed) => (
-                    <button
-                      key={bed}
-                      onClick={() => setSelectedBedrooms(selectedBedrooms === bed ? "" : bed)}
-                      className={`flex-1 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
-                        selectedBedrooms === bed
-                          ? "bg-gray-800 text-white"
-                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {bed}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Clear Filters Button */}
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedBedrooms('');
-                  setSelectedDate('');
-                  setMinPrice('');
-                  setMaxPrice('');
-                  setSelectedPropertyType('all');
-                  setSortDate('default');
-                  setSortPrice('default');
-                  const modal = document.getElementById('filterModal');
-                  if (modal) modal.classList.add('hidden');
-                }}
-                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg text-base font-medium transition-colors duration-200"
-              >
-                Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   );
