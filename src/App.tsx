@@ -167,12 +167,12 @@ function App() {
     // Filter by price range
     .filter(property => {
       const price = parseInt(property.price.replace(/[^0-9]/g, ''));
-      const min = minPrice ? parseInt(minPrice) * 1000000 : null;
-      const max = maxPrice ? parseInt(maxPrice) * 1000000 : null;
+      const min = minPrice ? parseInt(minPrice) : null;
+      const max = maxPrice ? parseInt(maxPrice) : null;
       
-      if (min && max) return price >= min && price <= max;
-      if (min) return price >= min;
-      if (max) return price <= max;
+      if (min !== null && max !== null) return price >= min && price <= max;
+      if (min !== null) return price >= min;
+      if (max !== null) return price <= max;
       return true;
     })
     // Sort by date
