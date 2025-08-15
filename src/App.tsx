@@ -167,8 +167,8 @@ function App() {
     // Filter by price range
     .filter(property => {
       const price = parseInt(property.price.replace(/[^0-9]/g, ''));
-      const min = minPrice ? parseInt(minPrice) : null;
-      const max = maxPrice ? parseInt(maxPrice) : null;
+      const min = minPrice ? parseInt(minPrice.replace(/,/g, '')) : null;
+      const max = maxPrice ? parseInt(maxPrice.replace(/,/g, '')) : null;
       
       if (min !== null && max !== null) return price >= min && price <= max;
       if (min !== null) return price >= min;
@@ -237,14 +237,14 @@ function App() {
         <div className="my-4">
           <PropertyFilter
             isAreaSelected={true}
-            minPrice={minPrice ? parseInt(minPrice) : null}
-            maxPrice={maxPrice ? parseInt(maxPrice) : null}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
             bedrooms={selectedBedrooms ? parseInt(selectedBedrooms) : null}
             sortDate={sortDate}
             sortPrice={sortPrice}
             onPriceChange={(min, max) => {
-              setMinPrice(min !== null ? min.toString() : '');
-              setMaxPrice(max !== null ? max.toString() : '');
+              setMinPrice(min ?? '');
+              setMaxPrice(max ?? '');
             }}
             onBedroomChange={beds => setSelectedBedrooms(beds !== null ? beds.toString() : '')}
             onSortDateChange={setSortDate}

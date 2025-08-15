@@ -3,26 +3,15 @@ import { X, Filter, Home, DollarSign } from 'lucide-react';
 
 interface PropertyFilterProps {
   isAreaSelected: boolean;
-  minPrice: number | null;
-  maxPrice: number | null;
+  minPrice: string;
+  maxPrice: string;
   bedrooms: number | null;
   sortDate: string;
   sortPrice: string;
-  onPriceChange: (min: number | null, max: number | null) => void;
+  onPriceChange: (min: string, max: string) => void;
   onBedroomChange: (beds: number | null) => void;
   onSortDateChange: (sort: string) => void;
   onSortPriceChange: (sort: string) => void;
-}
-
-interface PropertyFilterProps {
-  isAreaSelected: boolean;
-  minPrice: number | null;
-  maxPrice: number | null;
-  bedrooms: number | null;
-  sortDate: string;
-  onPriceChange: (min: number | null, max: number | null) => void;
-  onBedroomChange: (beds: number | null) => void;
-  onSortDateChange: (sort: string) => void;
 }
 
 export const PropertyFilter: React.FC<PropertyFilterProps> = ({
@@ -133,26 +122,22 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <input
-                type="number"
-                min={0}
-                placeholder="Min Price"
-                value={minPrice ?? ''}
+                type="text"
+                placeholder="Min Price e.g. 2,500,000"
+                value={minPrice}
                 onChange={e => {
-                  const val = e.target.value;
-                  onPriceChange(val === '' ? null : Number(val), maxPrice);
+                  onPriceChange(e.target.value, maxPrice);
                 }}
                 className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
               <input
-                type="number"
-                min={0}
-                placeholder="Max Price"
-                value={maxPrice ?? ''}
+                type="text"
+                placeholder="Max Price e.g. 5,000,000"
+                value={maxPrice}
                 onChange={e => {
-                  const val = e.target.value;
-                  onPriceChange(minPrice, val === '' ? null : Number(val));
+                  onPriceChange(minPrice, e.target.value);
                 }}
                 className="w-full bg-white border border-gray-300 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -189,7 +174,7 @@ export const PropertyFilter: React.FC<PropertyFilterProps> = ({
         {(minPrice || maxPrice || bedrooms || sortDate !== 'default') && (
           <button
             onClick={() => {
-              onPriceChange(null, null);
+              onPriceChange('', '');
               onBedroomChange(null);
               onSortDateChange('default');
             }}
