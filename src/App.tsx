@@ -175,21 +175,34 @@ function App() {
       if (max !== null) return price <= max;
       return true;
     })
-    // Sort by date
+    // Combined sort by date and price
     .sort((a, b) => {
-      if (sortDate === 'newest') {
-        return new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime();
-      } else if (sortDate === 'oldest') {
-        return new Date(a.posted_date).getTime() - new Date(b.posted_date).getTime();
+      // Robust date parsing
+      const parseDate = (d: string | undefined) => {
+        const t = new Date(d ?? '').getTime();
+        return isNaN(t) ? -Infinity : t;
+      };
+      // Date sorting
+      if (sortDate !== 'default') {
+        const dateA = parseDate(a.posted_date);
+        const dateB = parseDate(b.posted_date);
+        if (sortDate === 'newest' && dateA !== dateB) {
+          return dateB - dateA;
+        }
+        if (sortDate === 'oldest' && dateA !== dateB) {
+          return dateA - dateB;
+        }
       }
-      return 0;
-    })
-    // Sort by price
-    .sort((a, b) => {
-      if (sortPrice === 'highToLow') {
-        return parseInt(b.price.replace(/[^0-9]/g, '')) - parseInt(a.price.replace(/[^0-9]/g, ''));
-      } else if (sortPrice === 'lowToHigh') {
-        return parseInt(a.price.replace(/[^0-9]/g, '')) - parseInt(b.price.replace(/[^0-9]/g, ''));
+      // Price sorting
+      if (sortPrice !== 'default') {
+        const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
+        const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
+        if (sortPrice === 'highToLow' && priceA !== priceB) {
+          return priceB - priceA;
+        }
+        if (sortPrice === 'lowToHigh' && priceA !== priceB) {
+          return priceA - priceB;
+        }
       }
       return 0;
     });
