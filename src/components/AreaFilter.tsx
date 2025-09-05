@@ -6,8 +6,8 @@ interface AreaFilterProps {
   areas: AreaInfo[];
   selectedArea: string | null;
   onAreaSelect: (areaName: string | null) => void;
-  selectedCategory: 'all' | 'apartments' | 'villaTownhouse';
-  onCategoryChange: (category: 'all' | 'apartments' | 'villaTownhouse') => void;
+  selectedCategory: 'all' | 'apartments' | 'villaTownhouse' | 'commercials';
+  onCategoryChange: (category: 'all' | 'apartments' | 'villaTownhouse' | 'commercials') => void;
 }
 
 export const AreaFilter: React.FC<AreaFilterProps> = ({
@@ -21,13 +21,14 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
   const townhouseAreas = areas.filter(area => area.category === 'townhouses');
   const apartmentAreas = areas.filter(area => area.category === 'apartments');
   const villaTownhouseAreas = areas.filter(area => area.category === 'villas' || area.category === 'townhouses');
+  const commercialAreas = areas.filter(area => area.category === 'commercials');
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6">
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Filter by Area</h3>
       
       {/* Category Toggle */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 sm:mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 sm:mb-6">
         <button
           onClick={() => onCategoryChange('all')}
           className={`
@@ -65,6 +66,18 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
         >
           <Building2 className="w-3 h-3 sm:w-4 sm:h-4" />
           Apartments
+        </button>
+        <button
+          onClick={() => onCategoryChange('commercials')}
+          className={`
+            flex items-center justify-center gap-1 py-2.5 sm:py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
+            ${selectedCategory === 'commercials'
+              ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }
+          `}
+        >
+          Commercials
         </button>
       </div>
 
@@ -107,6 +120,29 @@ export const AreaFilter: React.FC<AreaFilterProps> = ({
             >
               <option value="">Select apartment area...</option>
               {apartmentAreas.map((area) => (
+                <option key={area.name} value={area.name}>
+                  {area.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+      )}
+
+      {(selectedCategory === 'all' || selectedCategory === 'commercials') && commercialAreas.length > 0 && (
+        <div className="mb-3 sm:mb-4">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+            Commercials
+          </label>
+          <div className="relative">
+            <select
+              value={selectedArea && commercialAreas.find(a => a.name === selectedArea) ? selectedArea : ''}
+              onChange={(e) => onAreaSelect(e.target.value || null)}
+              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-8"
+            >
+              <option value="">Select commercial area...</option>
+              {commercialAreas.map((area) => (
                 <option key={area.name} value={area.name}>
                   {area.name}
                 </option>

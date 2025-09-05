@@ -25,5 +25,5 @@ export interface AreaData {
 export interface AreaInfo {
   name: string;
   fileName: string;
-  category: 'villas' | 'townhouses' | 'apartments';
+  category: 'villas' | 'townhouses' | 'apartments' | 'commercials';
 }

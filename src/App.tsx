@@ -12,7 +12,7 @@ import { Building, Star, Database, Search } from 'lucide-react';
 
 function App() {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'apartments' | 'villaTownhouse'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'apartments' | 'villaTownhouse' | 'commercials'>('all');
   const [loadedAreas, setLoadedAreas] = useState<{ [key: string]: AreaData }>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<string>(''); // '', 'today', '7days', '30days'
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
-  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'apartments' | 'villaTownhouse'>('all');
+  const [selectedPropertyType, setSelectedPropertyType] = useState<'all' | 'apartments' | 'villaTownhouse' | 'commercials'>('all');
   const [sortDate, setSortDate] = useState<string>('default'); // 'default', 'newest', 'oldest'
   const [sortPrice, setSortPrice] = useState<string>('default'); // 'default', 'highToLow', 'lowToHigh'
   const [buildingSearchTerm, setBuildingSearchTerm] = useState<string>(''); // for listing search bar
@@ -105,7 +105,9 @@ function App() {
     selectedArea && loadedAreas[selectedArea]
       ? loadedAreas[selectedArea].properties
       : !selectedArea
-        ? Object.values(loadedAreas).flatMap(area => area.properties)
+        ? Object.values(loadedAreas)
+            .filter(area => area.properties && area.properties.length > 0)
+            .flatMap(area => area.properties)
         : [];
 
   // Show all loaded properties at start, even if loading is ongoing
@@ -177,33 +179,50 @@ function App() {
     })
     // Combined sort by date and price
     .sort((a, b) => {
-      // Robust date parsing
       const parseDate = (d: string | undefined) => {
         const t = new Date(d ?? '').getTime();
         return isNaN(t) ? -Infinity : t;
       };
-      // Date sorting
-      if (sortDate !== 'default') {
-        const dateA = parseDate(a.posted_date);
-        const dateB = parseDate(b.posted_date);
-        if (sortDate === 'newest' && dateA !== dateB) {
-          return dateB - dateA;
+      const dateA = parseDate(a.posted_date);
+      const dateB = parseDate(b.posted_date);
+      const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
+      const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
+
+      // If both sorts are set, sort by price first, then date
+      if (sortPrice !== 'default' && sortDate !== 'default') {
+        if (sortPrice === 'highToLow') {
+          if (priceB !== priceA) return priceB - priceA;
+        } else if (sortPrice === 'lowToHigh') {
+          if (priceA !== priceB) return priceA - priceB;
         }
-        if (sortDate === 'oldest' && dateA !== dateB) {
+        if (sortDate === 'newest') {
+          return dateB - dateA;
+        } else if (sortDate === 'oldest') {
           return dateA - dateB;
         }
+        return 0;
       }
-      // Price sorting
-      if (sortPrice !== 'default') {
-        const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
-        const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
-        if (sortPrice === 'highToLow' && priceA !== priceB) {
-          return priceB - priceA;
+
+      // Only date sort
+      if (sortDate !== 'default') {
+        if (sortDate === 'newest') {
+          return dateB - dateA;
+        } else if (sortDate === 'oldest') {
+          return dateA - dateB;
         }
-        if (sortPrice === 'lowToHigh' && priceA !== priceB) {
+        return 0;
+      }
+
+      // Only price sort
+      if (sortPrice !== 'default') {
+        if (sortPrice === 'highToLow') {
+          return priceB - priceA;
+        } else if (sortPrice === 'lowToHigh') {
           return priceA - priceB;
         }
+        return 0;
       }
+
       return 0;
     });
 

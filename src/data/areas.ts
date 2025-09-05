@@ -128,10 +128,78 @@ export const AREAS: AreaInfo[] = [
     name: 'Dubai Maritime City',
     fileName: 'dubai_maritime_city_total.json',
     category: 'apartments'
-  }
+  },
+  // Newly added areas
+  {
+    name: 'Damac Hills 2',
+    fileName: 'damac_hills_2_total.json',
+    category: 'townhouses'
+  },
+  {
+    name: 'Reem',
+    fileName: 'reem_total.json',
+    category: 'townhouses'
+  },
+  {
+    name: 'Arabian Ranches 2',
+    fileName: 'arabian_ranches_2_total.json',
+    category: 'townhouses'
+  },
+  {
+    name: 'Serena',
+    fileName: 'serena_total.json',
+    category: 'townhouses'
+  },
+  {
+    name: 'Motor City',
+    fileName: 'motor_city_total.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Arabian Ranches',
+    fileName: 'arabian_ranches_total.json',
+    category: 'townhouses'
+  },
+  // Commercials
+  {
+    name: 'Business Bay Commercial',
+    fileName: 'business_bay_commercial_total.json',
+    category: 'commercials'
+  },
+  {
+    name: 'Tecom',
+    fileName: 'tecom_total.json',
+    category: 'commercials'
+  },
+  {
+    name: 'MBR City',
+    fileName: 'MBR_city_total.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Majan',
+    fileName: 'majan_total.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Dubai Production City',
+    fileName: 'dubai_production_city_total.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Dubai Residence Complex',
+    fileName: 'dubai_land_residence_complex_total.json',
+    category: 'apartments'
+  },
+  {
+    name: 'Liwan',
+    fileName: 'liwan_total.json',
+    category: 'apartments'
+  },
 ];
 
 export const VILLA_AREAS = AREAS.filter(area => area.category === 'villas');
 export const APARTMENT_AREAS = AREAS.filter(area => area.category === 'apartments');
 export const TOWNHOUSE_AREAS = AREAS.filter(area => area.category === 'townhouses');
+export const COMMERCIAL_AREAS = AREAS.filter(area => area.category === 'commercials');
 // Note: 'url' property is not part of AreaInfo type and will be ignored by TypeScript.
