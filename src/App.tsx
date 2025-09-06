@@ -27,27 +27,44 @@ function App() {
   const [buildingSearchTerm, setBuildingSearchTerm] = useState<string>(''); // for listing search bar
   const [cancelLoading, setCancelLoading] = useState<boolean>(false);
 
-  // Incrementally load all areas on mount, but allow cancellation
+  // Prioritized loading: load selected area first, then others in background
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      for (const area of AREAS) {
-        if (cancelled) break;
-        if (!loadedAreas[area.name]) {
-          await loadAreaData(area.name);
+    // If no area is selected, load all areas sequentially as before
+    if (!selectedArea) {
+      (async () => {
+        for (const area of AREAS) {
+          if (cancelled) break;
+          if (!loadedAreas[area.name]) {
+            await loadAreaData(area.name, true);
+          }
         }
-      }
-    })();
+      })();
+    }
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cancelLoading]);
+  }, [cancelLoading, selectedArea]);
 
-  // When a filter or GPT search for a specific area is performed, cancel background loading and load only that area
+  // When a filter or GPT search for a specific area is performed, load that area first, then others in background
   const handleAreaOrGPTSearch = async (areaName: string | null) => {
     setCancelLoading(c => !c); // trigger cancellation of background loading
     if (areaName) {
       await loadAreaData(areaName);
       setSelectedArea(areaName);
+      // Start loading other areas in the background (non-blocking)
+      setTimeout(() => {
+        let cancelled = false;
+        (async () => {
+          for (const area of AREAS) {
+            if (cancelled) break;
+            if (area.name !== areaName && !loadedAreas[area.name]) {
+              await loadAreaData(area.name, true);
+            }
+          }
+        })();
+        // Cleanup function to cancel background loading if needed
+        return () => { cancelled = true; };
+      }, 0);
     } else {
       setSelectedArea(null);
     }
@@ -61,14 +78,16 @@ function App() {
     return false;
   });
 
-  // Load area data
-  const loadAreaData = async (areaName: string) => {
+  // Load area data, optionally as background (no spinner)
+  const loadAreaData = async (areaName: string, isBackground: boolean = false) => {
     if (loadedAreas[areaName]) {
       return; // Already loaded
     }
 
-    setLoading(true);
-    setError(null);
+    if (!isBackground) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const area = AREAS.find(a => a.name === areaName);
@@ -87,10 +106,14 @@ function App() {
         [areaName]: data
       }));
     } catch (err) {
-      setError(`Failed to load data for ${areaName}. Make sure the JSON file exists in Supabase Storage.`);
+      if (!isBackground) {
+        setError(`Failed to load data for ${areaName}. Make sure the JSON file exists in Supabase Storage.`);
+      }
       console.error('Error loading area data:', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   };
 
