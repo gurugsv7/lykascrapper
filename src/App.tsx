@@ -202,6 +202,12 @@ function App() {
     })
     // Combined sort by date and price
     .sort((a, b) => {
+      // Sort so that properties with location "N/A" are always last
+      const isANa = (a.location?.trim().toLowerCase() === "n/a");
+      const isBNa = (b.location?.trim().toLowerCase() === "n/a");
+      if (isANa && !isBNa) return 1;
+      if (!isANa && isBNa) return -1;
+
       const parseDate = (d: string | undefined) => {
         const t = new Date(d ?? '').getTime();
         return isNaN(t) ? -Infinity : t;
