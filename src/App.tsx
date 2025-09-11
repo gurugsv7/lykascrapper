@@ -606,19 +606,7 @@ function App() {
                     )}
                   </div>
                 </div>
-                  {selectedArea && (
-                    <div className="text-center my-6">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          window.location.href = `/area-details/${selectedArea}`;
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200"
-                      >
-                        View Area Details for {selectedArea}
-                      </button>
-                    </div>
-                  )}
+                  
                 {filteredProperties.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {filteredProperties.map((property, index) => (
